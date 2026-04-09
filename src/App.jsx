@@ -6,7 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import TransactionReports from './pages/TransactionReports';
 import QrDetails from './pages/QrDetails';
-
+import LanguageUpdate from './pages/LanguageUpdate';
 
 function App() {
   return (
@@ -19,9 +19,9 @@ function App() {
         {/* Protected Routes (Requires Token) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/qr" element={<QrDetails />} />
-          <Route path="/settings" element={<div>Settings Page</div>} />
           <Route path="/reports" element={<TransactionReports />} />
+          <Route path="/qr" element={<QrDetails />} />
+          <Route path="/language" element={<LanguageUpdate />} />
         </Route>
       </Routes>
     </Router>

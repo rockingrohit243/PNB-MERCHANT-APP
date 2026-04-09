@@ -76,37 +76,56 @@ export const pnbApi = {
     },
 
     // 4. Settings: Language Management
-    getCurrentLanguage: async () => {
+    getCurrentLanguage: async (tid) => {
         try {
-            const response = await apiClient.get('/pnb/language/currentLanguage');
-            return response.data;
+            const url = `${AUTH_CONFIG.getCurrentLanguageUrl}/${tid}`;
+            const response = await apiClient.get(url);
+            
+            // DECRYPT THE RESPONSE HERE
+            const decryptedData = decodeApiResponse(response.data);
+            return decryptedData;
         } catch (error) {
-            console.error("Error in getCurrentLanguage API:", error);
+            console.error("Error in getCurrentLanguage API:", error.response?.data || error.message);
             throw error;
         }
     },
 
     fetchAllLanguages: async () => {
         try {
-            const response = await apiClient.get('/pnb/language/fetchAllLanguage');
-            return response.data;
+            const response = await apiClient.get(AUTH_CONFIG.fetchAllLanguageUrl);
+            
+            // DECRYPT THE RESPONSE HERE
+            const decryptedData = decodeApiResponse(response.data);
+            return decryptedData;
         } catch (error) {
-            console.error("Error in fetchAllLanguages API:", error);
+            console.error("Error in fetchAllLanguages API:", error.response?.data || error.message);
             throw error;
         }
     },
 
-    updateLanguage: async (langId) => {
+    updateLanguage: async (tid, lang) => {
         try {
-            const response = await apiClient.post('/pnb/language/UpdateLanguage', {
-                language_id: langId
-            });
-            return response.data;
+            const rawPayload = {
+                tid: tid,
+                update_language: lang
+            };
+
+            const encrypted = encryptRequestData(rawPayload);
+            const body = { RequestData: encrypted };
+
+            console.log(">>> Sending Language Update Request:", body);
+
+            const response = await apiClient.post(AUTH_CONFIG.updateLanguageUrl, body);
+            
+            // DECRYPT THE RESPONSE HERE
+            const decryptedData = decodeApiResponse(response.data);
+            return decryptedData;
         } catch (error) {
-            console.error("Error in updateLanguage API:", error);
+            console.error("Error in updateLanguage API:", error.response?.data || error.message);
             throw error;
         }
     },
+    
 
 
     fetchUsersByDate: async (fromDate, toDate) => {

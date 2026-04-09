@@ -8,10 +8,17 @@ export const AUTH_CONFIG = {
     logoutEndpoint: 'https://pnb-auth-stage.isupay.in/application/o/pnb/end-session/',
     scopes: 'openid profile email offline_access authorities privileges user_name created adminName bankCode goauthentik.io/api',
 
-    // NEW: Report API Endpoints (api-dev-stage)
+    // // Report API Endpoints
     reportSubmitUrl: 'https://api-dev-stage.iserveu.online/pnb/sb/reports/querysubmit_user',
     reportStatusUrl: 'https://api-dev-stage.iserveu.online/pnb/sb/reports/get_report_status',
 
-    qrConvertUrl: 'https://auth-dev-stage.iserveu.online/pnb/merchant/qr_convert_to_base64'
+    // QR Code Endpoint
+    qrConvertUrl: 'https://auth-dev-stage.iserveu.online/pnb/merchant/qr_convert_to_base64',
+
+
+    // NEW: Language Endpoints
+    getCurrentLanguageUrl: 'https://auth-dev-stage.iserveu.online/pnb/isu_soundbox/user_api/current_language',
+    fetchAllLanguageUrl: 'https://auth-dev-stage.iserveu.online/pnb/isu_soundbox/lang/fetch_language',
+    updateLanguageUrl: 'https://auth-dev-stage.iserveu.online/pnb/isu_soundbox/lang/update_language',
 
 };
