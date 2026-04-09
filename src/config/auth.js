@@ -10,6 +10,8 @@ export const AUTH_CONFIG = {
 
     // NEW: Report API Endpoints (api-dev-stage)
     reportSubmitUrl: 'https://api-dev-stage.iserveu.online/pnb/sb/reports/querysubmit_user',
-    reportStatusUrl: 'https://api-dev-stage.iserveu.online/pnb/sb/reports/get_report_status'
+    reportStatusUrl: 'https://api-dev-stage.iserveu.online/pnb/sb/reports/get_report_status',
+
+    qrConvertUrl: 'https://auth-dev-stage.iserveu.online/pnb/merchant/qr_convert_to_base64'
 
 };

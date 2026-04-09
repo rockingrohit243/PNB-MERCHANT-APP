@@ -1,6 +1,7 @@
 import apiClient from './apiClient';
 import { encryptRequestData, decodeApiResponse } from '../utils/cryptoUtils';
 import { AUTH_CONFIG } from '../config/auth';
+import axios from 'axios';
 
 export const pnbApi = {
     // 1. Accept the fully prepared object directly from the Dashboard
@@ -44,15 +45,32 @@ export const pnbApi = {
         }
     },
 
+    
     // 3. QR Page: Convert raw QR string to Base64 Image
-    convertToQRBase64: async (qrString) => {
+    convertToQRBase64: async (qrStringParam) => {
         try {
-            const response = await apiClient.post('/pnb/qr/convertToQRBase64', {
-                qr_string: qrString
-            });
-            return response.data;
+            // 1. Prepare the raw payload
+            const rawPayload = { qrString: qrStringParam };
+            
+            // 2. Encrypt the payload because auth-dev-stage requires it
+            const encrypted = encryptRequestData(rawPayload);
+            
+            // 3. Wrap it in RequestData
+            const body = {
+                RequestData: encrypted
+            };
+
+            console.log(">>> Sending Encrypted QR Request:", body);
+
+            // 4. Send via apiClient to attach the Pass_key automatically
+            const response = await apiClient.post(AUTH_CONFIG.qrConvertUrl, body);
+            
+            // NOTE: If the API returns an encrypted response as well, 
+            // you will need to change this to: return decodeApiResponse(response.data);
+            return decodeApiResponse(response.data); 
+
         } catch (error) {
-            console.error("Error in convertToQRBase64 API:", error);
+            console.error("Error in convertToQRBase64 API:", error.response?.data || error.message);
             throw error;
         }
     },
