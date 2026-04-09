@@ -2,33 +2,33 @@ import apiClient from './apiClient';
 import { encryptRequestData, decodeApiResponse } from '../utils/cryptoUtils';
 
 export const pnbApi = {
-    // 1. Dashboard: Fetch Merchant Details and VPAs
-    fetchById: async (mobileNumber) => {
+  fetchById: async (mobileNumber) => {
     try {
-      // 1. Encrypt the payload
-      const encryptedPayload = encryptRequestData({
-        mobile_number: mobileNumber
-      });
-
-      console.log("Encrypted Payload:", encryptedPayload);
-
-      // 2. Post using the 'requestData' key
-      const response = await apiClient.post('/pnb/fetch/fetchById', {
-        requestData: encryptedPayload
-      });
+      const rawPayload = { mobile_number: mobileNumber };
       
+      // 1. Encrypt
+      const encrypted = encryptRequestData(rawPayload);
 
-      // 3. Decode the response (handles both ResponseData and raw data)
-      const decodedData = decodeApiResponse(response.data);
+      // 2. Wrap in RequestData (PascalCase as per your Postman)
+      const body = {
+        RequestData: encrypted 
+      };
+
+      console.log(">>> Sending Request:", body);
+
+      const response = await apiClient.post('/pnb/fetch/fetchById', body);
+      console.log("<<< Received Response:", response.data);
+
+      // 3. Decrypt and Log
+      const decryptedData = decodeApiResponse(response.data);
       
-      console.log("Decoded Dashboard Data:", decodedData);
-      return decodedData;
-      
+      return decryptedData;
     } catch (error) {
-      console.error("API Call Failed:", error);
+      console.error("fetchById Error:", error.response?.data || error.message);
       throw error;
     }
   },
+
 
     // 2. Reports: Fetch transactions based on date range
     fetchReports: async (startDate, endDate) => {

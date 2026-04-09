@@ -39,53 +39,78 @@ export function encryptRequestData(requestBody) {
   return CryptoJS.enc.Base64.stringify(combined);
 }
 
-/**
- * Decrypts raw ResponseData string
- */
 export function decryptResponseData(responseBody) {
-  if (!responseBody || typeof responseBody !== 'string') {
-    return responseBody;
+  // Log 1: The Raw Input
+  console.log("%c [CRYPTO] Raw Base64 from API:", "color: #007bff; font-weight: bold;", responseBody);
+  
+  if (!responseBody || typeof responseBody !== 'string') return responseBody;
+
+  try {
+    const fullWordArray = CryptoJS.enc.Base64.parse(responseBody);
+    
+    // Log 2: Total Byte Length
+    console.log(`[CRYPTO] Total bytes: ${fullWordArray.sigBytes}`);
+
+    // Extract IV (First 16 bytes)
+    const iv = CryptoJS.lib.WordArray.create(fullWordArray.words.slice(0, 4), 16);
+    console.log("[CRYPTO] Extracted IV (Hex):", CryptoJS.enc.Hex.stringify(iv));
+
+    // Extract CipherText (Rest)
+    const cipherText = CryptoJS.lib.WordArray.create(
+      fullWordArray.words.slice(4),
+      fullWordArray.sigBytes - 16
+    );
+    console.log("[CRYPTO] CipherText extracted. Length:", cipherText.sigBytes);
+
+    const decodedKey = getDecodedKey();
+
+    const decrypted = CryptoJS.AES.decrypt(
+      { ciphertext: cipherText }, 
+      decodedKey, 
+      {
+        iv: iv,
+        padding: CryptoJS.pad.Pkcs7,
+        mode: CryptoJS.mode.CBC,
+      }
+    );
+
+    const decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
+
+    // Log 3: The Result
+    if (!decryptedString) {
+      console.error("%c [CRYPTO] Decryption Failed! Result is empty.", "color: red;");
+      return null;
+    }
+
+    console.log("%c [CRYPTO] Decrypted String:", "color: #28a745; font-weight: bold;", decryptedString);
+    return decryptedString;
+
+  } catch (error) {
+    console.error("[CRYPTO] Internal Decryption Error:", error.message);
+    return null;
   }
-
-  const byteCipherText = CryptoJS.enc.Base64.parse(responseBody);
-  
-  // Extract the first 16 bytes as IV
-  const iv = CryptoJS.lib.WordArray.create(byteCipherText.words.slice(0, 4), 16);
-  
-  // Extract the remaining bytes as the actual CipherText
-  const cipherText = CryptoJS.lib.WordArray.create(
-    byteCipherText.words.slice(4),
-    byteCipherText.sigBytes - 16
-  );
-
-  const decodedKey = getDecodedKey();
-  
-  const decrypted = CryptoJS.AES.decrypt({ ciphertext: cipherText }, decodedKey, {
-    iv: iv,
-    padding: CryptoJS.pad.Pkcs7,
-    mode: CryptoJS.mode.CBC,
-  });
-
-  return decrypted.toString(CryptoJS.enc.Utf8);
 }
 
 /**
  * High-level helper to decode the entire API response object
  */
 export function decodeApiResponse(apiResponse) {
-  // Check if the response contains the encrypted key (case-sensitive check)
-  const encryptedData = apiResponse?.responseData || apiResponse?.ResponseData;
+  // Postman shows the key is "ResponseData"
+  const encryptedValue = apiResponse?.ResponseData || apiResponse?.responseData;
 
-  if (!encryptedData || typeof encryptedData !== 'string') {
-    return apiResponse; // Return as-is if not encrypted
+  if (!encryptedValue) {
+    console.warn("No encrypted field found in response:", apiResponse);
+    return apiResponse;
   }
 
-  const decryptedString = decryptResponseData(encryptedData);
-
   try {
+    // We send the raw string "value" to our decrypter
+    const decryptedString = decryptResponseData(encryptedValue);
+    
+    // Parse the final JSON string into an object
     return JSON.parse(decryptedString);
-  } catch (e) {
-    console.warn("Decrypted string is not valid JSON:", decryptedString);
-    return decryptedString;
+  } catch (error) {
+    console.error("Critical Decryption/Parsing Error:", error.message);
+    return null;
   }
 }
