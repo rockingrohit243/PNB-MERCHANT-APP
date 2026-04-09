@@ -6,6 +6,6 @@ export const AUTH_CONFIG = {
     authEndpoint: 'https://pnb-auth-stage.isupay.in/application/o/authorize/',
     tokenEndpoint: 'https://pnb-auth-stage.isupay.in/application/o/token/',
     logoutEndpoint: 'https://pnb-auth-stage.isupay.in/application/o/pnb/end-session/',
-    scopes: 'openid profile email bankCode',
+    scopes: 'openid profile email offline_access authorities privileges user_name created adminName bankCode goauthentik.io/api',
     
 };

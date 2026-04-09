@@ -9,12 +9,22 @@ const AuthCallback = () => {
 
     useEffect(() => {
         const code = searchParams.get('code');
+        const returnedState = searchParams.get('state');
 
+        //  Get stored state
+        const savedState = sessionStorage.getItem("oauth_state");
+
+        //  Validate state FIRST
+        if (!returnedState || returnedState !== savedState) {
+            console.error("Invalid state parameter");
+            setError("Security validation failed. Please login again.");
+            return;
+        }
+
+        //  Proceed only if state is valid
         if (code) {
-            // Exchange the URL code for the actual access token
             authService.exchangeCodeForToken(code)
                 .then(() => {
-                    // Success! Send them to the Dashboard immediately
                     navigate('/', { replace: true });
                 })
                 .catch((err) => {
@@ -30,7 +40,10 @@ const AuthCallback = () => {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
                 <p className="text-red-600 font-bold mb-4">{error}</p>
-                <button onClick={() => navigate('/login')} className="px-4 py-2 bg-[#a32a29] text-white rounded">
+                <button 
+                    onClick={() => navigate('/login')} 
+                    className="px-4 py-2 bg-[#a32a29] text-white rounded"
+                >
                     Return to Login
                 </button>
             </div>
