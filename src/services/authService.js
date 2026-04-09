@@ -50,8 +50,16 @@ export const authService = {
 
   // 3. Clear session and logout
   logout: () => {
-    sessionStorage.removeItem('access_token');
-    window.location.href = AUTH_CONFIG.logoutEndpoint;
+    // 1. Clear all local state
+    sessionStorage.clear();
+    localStorage.clear();
+
+    // 2. Build the proper GoAuthentik Logout URL
+    const redirectUri = encodeURIComponent(window.location.origin + '/login');
+    const logoutUrl = `${AUTH_CONFIG.logoutEndpoint}?client_id=${AUTH_CONFIG.clientId}&post_logout_redirect_uri=${redirectUri}`;
+    
+    // 3. Force browser to leave the React app and hit the Auth Server
+    window.location.href = logoutUrl;
   },
 
   // 4. Check if user is authenticated

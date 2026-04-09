@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom'; // You don't need this anymore
 import Avatar from '../common/Avatar';
 import { IconHamburger } from '../common/Icons';
 import { authService } from '../../services/authService';
@@ -7,7 +7,6 @@ import { authService } from '../../services/authService';
 const Topbar = ({ toggleSidebar, merchantName, onViewProfile }) => {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const userMenuRef = useRef(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
         const handler = (e) => {
@@ -18,8 +17,8 @@ const Topbar = ({ toggleSidebar, merchantName, onViewProfile }) => {
     }, []);
 
     const handleLogout = () => {
+        // ONLY calling the auth service to  handle the external redirect.
         authService.logout();
-        navigate('/login');
     };
 
     return (
