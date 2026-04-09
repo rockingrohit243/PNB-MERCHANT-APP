@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import TransactionReports from './pages/TransactionReports';
 import QrDetails from './pages/QrDetails';
 import LanguageUpdate from './pages/LanguageUpdate';
+import HelpAndSupport from './pages/HelpAndSupport';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/redirected" element={<AuthCallback />} />
+        <Route path="/help" element={<HelpAndSupport />} />
 
         {/* Protected Routes (Requires Token) */}
         <Route element={<ProtectedRoute />}>
@@ -22,6 +24,7 @@ function App() {
           <Route path="/reports" element={<TransactionReports />} />
           <Route path="/qr" element={<QrDetails />} />
           <Route path="/language" element={<LanguageUpdate />} />
+          
         </Route>
       </Routes>
     </Router>
