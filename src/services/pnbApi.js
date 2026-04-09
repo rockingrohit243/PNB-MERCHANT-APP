@@ -1,5 +1,6 @@
 import apiClient from './apiClient';
 import { encryptRequestData, decodeApiResponse } from '../utils/cryptoUtils';
+import { AUTH_CONFIG } from '../config/auth';
 
 export const pnbApi = {
     // 1. Accept the fully prepared object directly from the Dashboard
@@ -109,5 +110,36 @@ export const pnbApi = {
             console.error("Error in fetchUsersByDate:", error);
             throw error;
         }
-    }
+    },
+
+
+
+
+   // Submit Query for Transaction Reports (Using absolute URL from auth.js)
+    submitReportQuery: async (payload) => {
+        try {
+            console.log(">>> Sending Raw Report Request:", payload);
+            
+            // Axios will use this absolute URL and ignore the auth-dev-stage baseURL
+            const response = await apiClient.post(AUTH_CONFIG.reportSubmitUrl, payload);
+            return response.data;
+        } catch (error) {
+            console.error("submitReportQuery Error:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Get Report Download Status (Using absolute URL from auth.js)
+    getReportStatus: async (queryId) => {
+        try {
+            // Append the queryId dynamically to the base status URL
+            const url = `${AUTH_CONFIG.reportStatusUrl}/${queryId}`;
+            
+            const response = await apiClient.get(url);
+            return response.data;
+        } catch (error) {
+            console.error("getReportStatus Error:", error.response?.data || error.message);
+            throw error;
+        }
+    },
 };

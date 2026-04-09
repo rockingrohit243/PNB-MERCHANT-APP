@@ -7,5 +7,9 @@ export const AUTH_CONFIG = {
     tokenEndpoint: 'https://pnb-auth-stage.isupay.in/application/o/token/',
     logoutEndpoint: 'https://pnb-auth-stage.isupay.in/application/o/pnb/end-session/',
     scopes: 'openid profile email offline_access authorities privileges user_name created adminName bankCode goauthentik.io/api',
-    
+
+    // NEW: Report API Endpoints (api-dev-stage)
+    reportSubmitUrl: 'https://api-dev-stage.iserveu.online/pnb/sb/reports/querysubmit_user',
+    reportStatusUrl: 'https://api-dev-stage.iserveu.online/pnb/sb/reports/get_report_status'
+
 };
