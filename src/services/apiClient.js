@@ -11,6 +11,7 @@ apiClient.interceptors.request.use((config) => {
     const token = sessionStorage.getItem('access_token');
 
     if (token) {
+        console.log("token is present", token)
         config.headers['Authorization'] = `Bearer ${token}`;
     }
 

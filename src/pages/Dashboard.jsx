@@ -233,6 +233,7 @@ const Dashboard = () => {
     const loadDashboard = async () => {
       try {
         const response = await pnbApi.fetchById(merchantIdentifier);
+        console.log('Response:', response);
         if (response && response.length > 0) {
           setVpList(response);
           setMerchantName(response[0].merchant_name || 'Stebin Ben');
