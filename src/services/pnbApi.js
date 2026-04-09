@@ -4,7 +4,7 @@ import { AUTH_CONFIG } from '../config/auth';
 import axios from 'axios';
 
 export const pnbApi = {
-    // 1. Accept the fully prepared object directly from the Dashboard
+    // 1. Accept the fully prepared object directly from the Dashboard for mobilenumber and VPA wise fetch
     fetchById: async (requestBody) => {
         try {
             // 2. Encrypt the dynamically passed payload (e.g., { mobile_number: "..." } or { vpa_id: "..." })
