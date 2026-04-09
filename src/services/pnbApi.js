@@ -2,32 +2,31 @@ import apiClient from './apiClient';
 import { encryptRequestData, decodeApiResponse } from '../utils/cryptoUtils';
 
 export const pnbApi = {
-  fetchById: async (mobileNumber) => {
-    try {
-      const rawPayload = { mobile_number: mobileNumber };
-      
-      // 1. Encrypt
-      const encrypted = encryptRequestData(rawPayload);
+    // 1. Accept the fully prepared object directly from the Dashboard
+    fetchById: async (requestBody) => {
+        try {
+            // 2. Encrypt the dynamically passed payload (e.g., { mobile_number: "..." } or { vpa_id: "..." })
+            const encrypted = encryptRequestData(requestBody);
 
-      // 2. Wrap in RequestData (PascalCase as per your Postman)
-      const body = {
-        RequestData: encrypted 
-      };
+            // 3. Wrap in RequestData (PascalCase as per your Postman)
+            const body = {
+                RequestData: encrypted
+            };
 
-      console.log(">>> Sending Request:", body);
+            console.log(">>> Sending Request:", body);
 
-      const response = await apiClient.post('/pnb/fetch/fetchById', body);
-      console.log("<<< Received Response:", response.data);
+            const response = await apiClient.post('/pnb/fetch/fetchById', body);
+            console.log("<<< Received Response:", response.data);
 
-      // 3. Decrypt and Log
-      const decryptedData = decodeApiResponse(response.data);
-      
-      return decryptedData;
-    } catch (error) {
-      console.error("fetchById Error:", error.response?.data || error.message);
-      throw error;
-    }
-  },
+            // 4. Decrypt and Log
+            const decryptedData = decodeApiResponse(response.data);
+
+            return decryptedData;
+        } catch (error) {
+            console.error("fetchById Error:", error.response?.data || error.message);
+            throw error;
+        }
+    },
 
 
     // 2. Reports: Fetch transactions based on date range
@@ -86,6 +85,28 @@ export const pnbApi = {
             return response.data;
         } catch (error) {
             console.error("Error in updateLanguage API:", error);
+            throw error;
+        }
+    },
+
+
+    fetchUsersByDate: async (fromDate, toDate) => {
+        try {
+            const body = {
+                from_date: fromDate,
+                to_date: toDate
+            };
+
+            const response = await apiClient.post(
+                '/pnb/fetch/fetch-users',
+                body
+            );
+
+            console.log("FETCH USERS RESPONSE:", response.data);
+
+            return response.data; // { data: [...], totalRows }
+        } catch (error) {
+            console.error("Error in fetchUsersByDate:", error);
             throw error;
         }
     }

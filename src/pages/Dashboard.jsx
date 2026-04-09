@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { pnbApi } from '../services/pnbApi';
 import { authService } from '../services/authService';
 import pnbLogo from '../assets/pnb-logo.png';
+import { jwtDecode } from 'jwt-decode';
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
 const IconDashboard = () => (
@@ -63,11 +64,6 @@ const IconChevronDown = () => (
     <polyline points="6 9 12 15 18 9" />
   </svg>
 );
-const IconClose = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
 
 // ── Profile Avatar ─────────────────────────────────────────────────────────────
 const Avatar = ({ name }) => (
@@ -82,8 +78,8 @@ const Avatar = ({ name }) => (
 );
 
 // ── Select VPA Modal (Multi VPA) ───────────────────────────────────────────────
-const SelectVpaModal = ({ vpList, onSelect, onCancel }) => {
-  const [selected, setSelected] = useState(vpList[0]?.vpa_id || '');
+const SelectVpaModal = ({ vpList, initialSelected, onSelect, onCancel }) => {
+  const [selected, setSelected] = useState(initialSelected || vpList[0]?.vpa_id || '');
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)',
@@ -131,8 +127,8 @@ const SelectVpaModal = ({ vpList, onSelect, onCancel }) => {
 };
 
 // ── Profile Details Modal ──────────────────────────────────────────────────────
-const ProfileModal = ({ merchantName, vpList, onClose }) => {
-  const vpa = vpList[0] || {};
+const ProfileModal = ({ merchantName, activeVpa, onClose }) => {
+  const vpa = activeVpa || {};
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)',
@@ -150,23 +146,23 @@ const ProfileModal = ({ merchantName, vpList, onClose }) => {
             <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 14 }}>Basic Information</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 14 }}>
               <InfoRow label="Name" value={merchantName} />
-              <InfoRow label="Phone" value={vpa.merchant_mobile || '+91 9398239231'} />
+              <InfoRow label="Phone" value={vpa.merchant_mobile || 'N/A'} />
             </div>
           </div>
 
           <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 20, marginBottom: 8 }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 14 }}>Device Information</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', rowGap: 14 }}>
-              <InfoRow label="Device Serial Number" value={vpa.device_serial || '456954659876857'} />
-              <InfoRow label="Linked Account Number" value={`XXXXX${vpa.merchant_account_no?.slice(-4) || '6857'}`} />
-              <InfoRow label="UPI ID" value={vpa.vpa_id || 'rudransh.panigrahi@pnb'} />
-              <InfoRow label="IFSC Code" value={vpa.ifsc || 'PUNB028386'} />
-              <InfoRow label="Device Model Name" value={vpa.device_model || 'Morefun ET389'} />
-              <InfoRow label="Device Mobile Number" value={vpa.device_mobile || '+91 9398239231'} />
-              <InfoRow label="Network Type" value={vpa.network_type || 'BSNL'} />
-              <InfoRow label="Device Status" value={vpa.device_status || 'Active'} />
-              <InfoRow label="Battery Percentage" value={vpa.battery || '60%'} />
-              <InfoRow label="Network Strength" value={vpa.network_strength || 'Strong'} />
+              <InfoRow label="Device Serial Number" value={vpa.serial_number || vpa.device_serial || 'N/A'} />
+              <InfoRow label="Linked Account Number" value={vpa.merchant_account_no ? `XXXXX${vpa.merchant_account_no.slice(-4)}` : 'N/A'} />
+              <InfoRow label="UPI ID" value={vpa.vpa_id || 'N/A'} />
+              <InfoRow label="IFSC Code" value={vpa.ifsc || 'N/A'} />
+              <InfoRow label="Device Model Name" value={vpa.device_model || 'N/A'} />
+              <InfoRow label="Device Mobile Number" value={vpa.merchant_mobile || 'N/A'} />
+              <InfoRow label="Network Type" value={vpa.network_type || 'N/A'} />
+              <InfoRow label="Device Status" value={vpa.device_status || 'N/A'} />
+              <InfoRow label="Battery Percentage" value={vpa.battery || 'N/A'} />
+              <InfoRow label="Network Strength" value={vpa.network_strength || 'N/A'} />
             </div>
           </div>
         </div>
@@ -190,6 +186,19 @@ const InfoRow = ({ label, value }) => (
   </div>
 );
 
+// Get mobilenumber from token
+const getMobileFromToken = () => {
+  const token = sessionStorage.getItem('access_token');
+  if (!token) return null;
+  try {
+    const decoded = jwtDecode(token);
+    return decoded.user_name; 
+  } catch (error) {
+    console.error("Token decode failed", error);
+    return null;
+  }
+};
+
 // ── Main Dashboard ─────────────────────────────────────────────────────────────
 const Dashboard = () => {
   const [vpList, setVpList] = useState([]);
@@ -197,42 +206,23 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isMultiVpa, setIsMultiVpa] = useState(false);
 
-  // Multi-VPA modal (shown at start if multi)
+  // VPA & Filters Selection
   const [showVpaModal, setShowVpaModal] = useState(false);
-  // Selected VPA (single or chosen from multi)
   const [selectedVpa, setSelectedVpa] = useState(null);
-
-  // VPA dropdown (multi-vpa header dropdown)
-  const [vpaDropdownOpen, setVpaDropdownOpen] = useState(false);
-
-  // Date filter dropdown
+  const [activeVpaProfile, setActiveVpaProfile] = useState({}); // Stores fully fetched profile for selected VPA
   const [dateFilter, setDateFilter] = useState('Today');
-  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
 
-  // User menu dropdown
+  // Dropdown states
+  const [vpaDropdownOpen, setVpaDropdownOpen] = useState(false);
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-  // Modals
+  // Modals & Navigation
   const [showProfileModal, setShowProfileModal] = useState(false);
-
-  // Sidebar collapse
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Stats (mocked — wire to API as needed)
-  //Dynamic stats
-  const [stats, setStats] = useState({ totalTx: 0, totalAmount: 0, });
-  // ✅ Calculate stats for selected VPA
-  const calculateStats = (data, selectedVpa) => {
-    const vpaData = data.find(item => item.vpa_id === selectedVpa);
-
-    if (!vpaData) return { totalTx: 0, totalAmount: 0 };
-
-    // ⚠️ TEMP fallback (since no txn data in your API)
-    return {
-      totalTx: Math.floor(Math.random() * 100),     // replace later with real API
-      totalAmount: Math.floor(Math.random() * 10000),
-    };
-  };
+  // Stats Data
+  const [stats, setStats] = useState({ totalTx: 0, totalAmount: 0 });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -241,23 +231,29 @@ const Dashboard = () => {
   const dateDropdownRef = useRef(null);
   const userMenuRef = useRef(null);
 
+  // 1. Initial Load: Fetch User Details by Mobile Number
   useEffect(() => {
-    const merchantIdentifier = '7896789753';
+    const activeMobileNumber = getMobileFromToken() || '7574857003';
 
     const loadDashboard = async () => {
       try {
-        const response = await pnbApi.fetchById(merchantIdentifier);
-        console.log('Response:', response);
-        if (response && response.length > 0) {
-          setVpList(response);
-          setMerchantName(response[0].merchant_name || 'Stebin Ben');
-          if (response.length > 1) {
+        // Prepare exactly what is sent to the API
+        const requestBody = { mobile_number: activeMobileNumber };
+        const response = await pnbApi.fetchById(requestBody);
+
+        if (response && response.data && response.data.length > 0) {
+          const vpaData = response.data;
+          setVpList(vpaData);
+          setMerchantName(vpaData[0].merchant_name || 'Merchant User');
+          
+          setSelectedVpa(vpaData[0].vpa_id);
+          setActiveVpaProfile(vpaData[0]);
+
+          if (vpaData.length > 1) {
             setIsMultiVpa(true);
             setShowVpaModal(true);
-            setSelectedVpa(response[0].vpa_id);
           } else {
             setIsMultiVpa(false);
-            setSelectedVpa(response[0].vpa_id);
           }
         }
       } catch (error) {
@@ -269,7 +265,63 @@ const Dashboard = () => {
     loadDashboard();
   }, []);
 
-  // Close dropdowns on outside click
+  // 2. Fetch Profile details actively when a specific VPA is chosen
+  const handleVpaSelect = async (vpaId) => {
+    setSelectedVpa(vpaId);
+    setShowVpaModal(false);
+    
+    try {
+      // Prepare the VPA specific request body directly from the Dashboard
+      const requestBody = { vpa_id: vpaId };
+      const response = await pnbApi.fetchById(requestBody);
+
+      if (response && response.data && response.data.length > 0) {
+        // Update the active profile to show in the modal
+        setActiveVpaProfile(response.data[0]); 
+      }
+    } catch (error) {
+      console.error(`Failed to fetch profile for VPA: ${vpaId}`, error);
+    }
+  };
+
+  // 3. Fetch Stats dynamically when VPA or Date changes
+  useEffect(() => {
+    const fetchDynamicStats = async () => {
+      if (!selectedVpa) return;
+
+      try {
+        const today = new Date();
+        let start = new Date(today);
+        let end = new Date(today);
+
+        if (dateFilter === 'Yesterday') {
+          start.setDate(today.getDate() - 1);
+          end = new Date(start);
+        }
+
+        const formatDate = (date) => date.toISOString().split('T')[0];
+        const startDateString = formatDate(start);
+        const endDateString = formatDate(end);
+
+        const reportData = await pnbApi.fetchReports(startDateString, endDateString);
+        const txns = Array.isArray(reportData) ? reportData : (reportData?.data || []);
+
+        const filteredTxns = txns.filter(txn => txn.vpa_id === selectedVpa);
+
+        const totalTx = filteredTxns.length;
+        const totalAmount = filteredTxns.reduce((sum, txn) => sum + (Number(txn.amount) || 0), 0);
+
+        setStats({ totalTx, totalAmount });
+      } catch (error) {
+        console.error("Failed to load statistics for selected VPA/Date", error);
+        setStats({ totalTx: 0, totalAmount: 0 }); 
+      }
+    };
+
+    fetchDynamicStats();
+  }, [selectedVpa, dateFilter]);
+
+  // Handle outside clicks for dropdowns
   useEffect(() => {
     const handler = (e) => {
       if (vpaDropdownRef.current && !vpaDropdownRef.current.contains(e.target)) setVpaDropdownOpen(false);
@@ -279,37 +331,6 @@ const Dashboard = () => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-  // ✅ Update stats when VPA changes
-    useEffect(() => {
-      if (vpList.length > 0 && selectedVpa) {
-        const result = calculateStats(vpList, selectedVpa);
-        setStats(result);
-      }
-    }, [vpList, selectedVpa]);
-
- const handleVpaSelect = async (vpaId) => {
-  setSelectedVpa(vpaId);
-  setShowVpaModal(false);
-
-  try {
-    const report = await pnbApi.fetchReports(); // pass dates if needed
-
-    // ✅ Filter by selected VPA
-    const filtered = report.filter(txn => txn.vpa_id === vpaId);
-
-    const totalTx = filtered.length;
-
-    const totalAmount = filtered.reduce(
-      (sum, txn) => sum + (txn.amount || 0),
-      0
-    );
-
-    setStats({ totalTx, totalAmount });
-
-  } catch (error) {
-    console.error("Failed to fetch reports", error);
-  }
-};
 
   const handleLogout = () => {
     authService.logout();
@@ -343,6 +364,7 @@ const Dashboard = () => {
       {showVpaModal && isMultiVpa && (
         <SelectVpaModal
           vpList={vpList}
+          initialSelected={selectedVpa}
           onSelect={handleVpaSelect}
           onCancel={() => setShowVpaModal(false)}
         />
@@ -352,7 +374,7 @@ const Dashboard = () => {
       {showProfileModal && (
         <ProfileModal
           merchantName={merchantName}
-          vpList={vpList}
+          activeVpa={activeVpaProfile}
           onClose={() => setShowProfileModal(false)}
         />
       )}
@@ -508,7 +530,8 @@ const Dashboard = () => {
                         {vpList.map((item, i) => (
                           <button
                             key={i}
-                            onClick={() => { setSelectedVpa(item.vpa_id); setVpaDropdownOpen(false); }}
+                            // Call the new API logic when a VPA is selected from the dropdown
+                            onClick={() => { handleVpaSelect(item.vpa_id); setVpaDropdownOpen(false); }}
                             style={{
                               width: '100%', padding: '10px 16px', border: 'none',
                               background: selectedVpa === item.vpa_id ? '#fdf2f2' : 'none',
@@ -594,7 +617,9 @@ const Dashboard = () => {
                   </div>
                   <span style={{ fontSize: 14, color: '#444', fontWeight: 500 }}>Total No Of Transaction</span>
                 </div>
-                <span style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>{stats.totalTx.toLocaleString()}</span>
+                <span style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>
+                  {stats.totalTx >= 1000 ? (stats.totalTx / 1000).toFixed(1) + 'K' : stats.totalTx}
+                </span>
               </div>
 
               {/* Card 2 */}
@@ -613,7 +638,9 @@ const Dashboard = () => {
                   </div>
                   <span style={{ fontSize: 14, color: '#444', fontWeight: 500 }}>Total Amount</span>
                 </div>
-                <span style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>₹ {stats.totalAmount.toLocaleString()}</span>
+                <span style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>
+                  ₹ {stats.totalAmount.toLocaleString()}
+                </span>
               </div>
             </div>
 
