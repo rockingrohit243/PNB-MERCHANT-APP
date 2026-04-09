@@ -193,7 +193,7 @@ const InfoRow = ({ label, value }) => (
 // ── Main Dashboard ─────────────────────────────────────────────────────────────
 const Dashboard = () => {
   const [vpList, setVpList] = useState([]);
-  const [merchantName, setMerchantName] = useState('Stebin Ben');
+  const [merchantName, setMerchantName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isMultiVpa, setIsMultiVpa] = useState(false);
 
@@ -219,7 +219,20 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Stats (mocked — wire to API as needed)
-  const [stats] = useState({ totalTx: '20.7K', totalAmount: '76,000 cr' });
+  //Dynamic stats
+  const [stats, setStats] = useState({ totalTx: 0, totalAmount: 0, });
+  // ✅ Calculate stats for selected VPA
+  const calculateStats = (data, selectedVpa) => {
+    const vpaData = data.find(item => item.vpa_id === selectedVpa);
+
+    if (!vpaData) return { totalTx: 0, totalAmount: 0 };
+
+    // ⚠️ TEMP fallback (since no txn data in your API)
+    return {
+      totalTx: Math.floor(Math.random() * 100),     // replace later with real API
+      totalAmount: Math.floor(Math.random() * 10000),
+    };
+  };
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -230,6 +243,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     const merchantIdentifier = '7896789753';
+
     const loadDashboard = async () => {
       try {
         const response = await pnbApi.fetchById(merchantIdentifier);
@@ -248,18 +262,6 @@ const Dashboard = () => {
         }
       } catch (error) {
         console.error('Failed to load dashboard data', error);
-        // Demo fallback
-        const demo = [
-          { vpa_id: 'Pabitra.hota@pnb', merchant_name: 'Stebin Ben', merchant_account_no: '123456857' },
-          { vpa_id: '9283032322742bis@pnb', merchant_name: 'Stebin Ben', merchant_account_no: '123456857' },
-          { vpa_id: 'Pabitra@pnb', merchant_name: 'Stebin Ben', merchant_account_no: '123456857' },
-          { vpa_id: 'Pabitra.hota@pnb', merchant_name: 'Stebin Ben', merchant_account_no: '123456857' },
-        ];
-        setVpList(demo);
-        setMerchantName('Stebin Ben');
-        setIsMultiVpa(true);
-        setShowVpaModal(true);
-        setSelectedVpa(demo[0].vpa_id);
       } finally {
         setIsLoading(false);
       }
@@ -277,11 +279,37 @@ const Dashboard = () => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+  // ✅ Update stats when VPA changes
+    useEffect(() => {
+      if (vpList.length > 0 && selectedVpa) {
+        const result = calculateStats(vpList, selectedVpa);
+        setStats(result);
+      }
+    }, [vpList, selectedVpa]);
 
-  const handleVpaSelect = (vpaId) => {
-    setSelectedVpa(vpaId);
-    setShowVpaModal(false);
-  };
+ const handleVpaSelect = async (vpaId) => {
+  setSelectedVpa(vpaId);
+  setShowVpaModal(false);
+
+  try {
+    const report = await pnbApi.fetchReports(); // pass dates if needed
+
+    // ✅ Filter by selected VPA
+    const filtered = report.filter(txn => txn.vpa_id === vpaId);
+
+    const totalTx = filtered.length;
+
+    const totalAmount = filtered.reduce(
+      (sum, txn) => sum + (txn.amount || 0),
+      0
+    );
+
+    setStats({ totalTx, totalAmount });
+
+  } catch (error) {
+    console.error("Failed to fetch reports", error);
+  }
+};
 
   const handleLogout = () => {
     authService.logout();
@@ -566,7 +594,7 @@ const Dashboard = () => {
                   </div>
                   <span style={{ fontSize: 14, color: '#444', fontWeight: 500 }}>Total No Of Transaction</span>
                 </div>
-                <span style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>{stats.totalTx}</span>
+                <span style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>{stats.totalTx.toLocaleString()}</span>
               </div>
 
               {/* Card 2 */}
@@ -585,7 +613,7 @@ const Dashboard = () => {
                   </div>
                   <span style={{ fontSize: 14, color: '#444', fontWeight: 500 }}>Total Amount</span>
                 </div>
-                <span style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>{stats.totalAmount}</span>
+                <span style={{ fontSize: 22, fontWeight: 700, color: '#111' }}>₹ {stats.totalAmount.toLocaleString()}</span>
               </div>
             </div>
 
