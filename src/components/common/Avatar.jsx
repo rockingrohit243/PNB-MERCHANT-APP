@@ -1,5 +1,3 @@
-import React from 'react';
-
 const Avatar = ({ name }) => (
   <div style={{
     width: 32, height: 32, borderRadius: '50%',

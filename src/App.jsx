@@ -16,9 +16,9 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/redirected" element={<AuthCallback />} />
-        <Route path="/help" element={<HelpAndSupport />} />
+        <Route path="/help" element={<HelpAndSupport />} /> {/*As this was mising in figma so i have added a coming soon page */}
 
-        {/* Protected Routes (Requires Token) */}
+        {/* Protected Routes (Requires Token)  */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/reports" element={<TransactionReports />} />

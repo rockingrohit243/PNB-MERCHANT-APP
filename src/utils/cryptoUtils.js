@@ -1,10 +1,8 @@
 import CryptoJS from 'crypto-js';
+import { AUTH_CONFIG } from '../config/auth';
 
-/**
- * YOUR SHARED KEYS:
- * Pass_key (Header & Encryption): QC62FQKXT2DQTO43LMWH5A44UKVPQ7LK5Y6HVHRQ3XTIKLDTB6HA
- */
-const PAYLOAD_ENCRYPTION_KEY = 'a6T8tOCYiSzDTrcqPvCbJfy0wSQOVcfaevH0gtwCtoU=';
+
+const PAYLOAD_ENCRYPTION_KEY = AUTH_CONFIG.payloadEncryptionKey;;
 
 /**
  * Helper to decode the static Pass_key from Base64 for CryptoJS
@@ -41,7 +39,6 @@ export function encryptRequestData(requestBody) {
 
 export function decryptResponseData(responseBody) {
   // Log 1: The Raw Input
-  console.log("%c [CRYPTO] Raw Base64 from API:", "color: #007bff; font-weight: bold;", responseBody);
   
   if (!responseBody || typeof responseBody !== 'string') return responseBody;
 
@@ -49,18 +46,15 @@ export function decryptResponseData(responseBody) {
     const fullWordArray = CryptoJS.enc.Base64.parse(responseBody);
     
     // Log 2: Total Byte Length
-    console.log(`[CRYPTO] Total bytes: ${fullWordArray.sigBytes}`);
 
     // Extract IV (First 16 bytes)
     const iv = CryptoJS.lib.WordArray.create(fullWordArray.words.slice(0, 4), 16);
-    console.log("[CRYPTO] Extracted IV (Hex):", CryptoJS.enc.Hex.stringify(iv));
 
     // Extract CipherText (Rest)
     const cipherText = CryptoJS.lib.WordArray.create(
       fullWordArray.words.slice(4),
       fullWordArray.sigBytes - 16
     );
-    console.log("[CRYPTO] CipherText extracted. Length:", cipherText.sigBytes);
 
     const decodedKey = getDecodedKey();
 
@@ -82,7 +76,6 @@ export function decryptResponseData(responseBody) {
       return null;
     }
 
-    console.log("%c [CRYPTO] Decrypted String:", "color: #28a745; font-weight: bold;", decryptedString);
     return decryptedString;
 
   } catch (error) {

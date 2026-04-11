@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom'; // You don't need this anymore
 import Avatar from '../common/Avatar';
 import { IconHamburger } from '../common/Icons';
 import { authService } from '../../services/authService';

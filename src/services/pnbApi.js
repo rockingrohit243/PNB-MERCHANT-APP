@@ -4,23 +4,20 @@ import { AUTH_CONFIG } from '../config/auth';
 import axios from 'axios';
 
 export const pnbApi = {
-    // 1. Accept the fully prepared object directly from the Dashboard for mobilenumber and VPA wise fetch
+    //  Accept the fully prepared object directly from the Dashboard for mobilenumber and VPA wise fetch
     fetchById: async (requestBody) => {
         try {
-            // 2. Encrypt the dynamically passed payload (e.g., { mobile_number: "..." } or { vpa_id: "..." })
+            //  Encrypt the dynamically passed payload (e.g., { mobile_number: "..." } or { vpa_id: "..." })
             const encrypted = encryptRequestData(requestBody);
 
-            // 3. Wrap in RequestData (PascalCase as per your Postman)
+            // Wrap in RequestData 
             const body = {
                 RequestData: encrypted
             };
 
-            console.log(">>> Sending Request:", body);
-
             const response = await apiClient.post('/pnb/fetch/fetchById', body);
-            console.log("<<< Received Response:", response.data);
-
-            // 4. Decrypt and Log
+           
+            //  Decrypt 
             const decryptedData = decodeApiResponse(response.data);
 
             return decryptedData;
@@ -60,13 +57,10 @@ export const pnbApi = {
                 RequestData: encrypted
             };
 
-            console.log(">>> Sending Encrypted QR Request:", body);
 
             // 4. Send via apiClient to attach the Pass_key automatically
             const response = await apiClient.post(AUTH_CONFIG.qrConvertUrl, body);
             
-            // NOTE: If the API returns an encrypted response as well, 
-            // you will need to change this to: return decodeApiResponse(response.data);
             return decodeApiResponse(response.data); 
 
         } catch (error) {
@@ -113,7 +107,6 @@ export const pnbApi = {
             const encrypted = encryptRequestData(rawPayload);
             const body = { RequestData: encrypted };
 
-            console.log(">>> Sending Language Update Request:", body);
 
             const response = await apiClient.post(AUTH_CONFIG.updateLanguageUrl, body);
             
@@ -140,7 +133,6 @@ export const pnbApi = {
                 body
             );
 
-            console.log("FETCH USERS RESPONSE:", response.data);
 
             return response.data; // { data: [...], totalRows }
         } catch (error) {
@@ -155,7 +147,6 @@ export const pnbApi = {
    // Submit Query for Transaction Reports (Using absolute URL from auth.js)
     submitReportQuery: async (payload) => {
         try {
-            console.log(">>> Sending Raw Report Request:", payload);
             
             // Axios will use this absolute URL and ignore the auth-dev-stage baseURL
             const response = await apiClient.post(AUTH_CONFIG.reportSubmitUrl, payload);

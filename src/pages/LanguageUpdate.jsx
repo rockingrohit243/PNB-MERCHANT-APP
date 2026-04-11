@@ -49,7 +49,6 @@ const LanguageUpdate = () => {
     const fetchLangs = async () => {
       try {
         const langRes = await pnbApi.fetchAllLanguages();
-        console.log("Available Languages Data:", langRes); // Debugging log
         
         // Safely handle different array structures from the backend
         const langsList = Array.isArray(langRes?.data) ? langRes.data : (Array.isArray(langRes) ? langRes : []);
@@ -68,7 +67,6 @@ const LanguageUpdate = () => {
     setCurrentLanguage('Loading...');
     try {
       const res = await pnbApi.getCurrentLanguage(tid);
-      console.log("Current Language Data:", res); // Debugging log
       
       if (res?.data) {
         setCurrentLanguage(res.data);
